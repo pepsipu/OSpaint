@@ -1,0 +1,3 @@
+void draw_desktop() {
+
+}

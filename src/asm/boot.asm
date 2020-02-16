@@ -4,7 +4,7 @@ CHECKSUM equ -(MAGIC + FLAGS)
 VIDMODE equ 0
 WIDTH equ 1280
 HEIGHT equ 720
-DEPTH equ 32
+DEPTH equ 24
 
 global _start:function (_start.end - _start)
 extern kmain
@@ -30,6 +30,7 @@ section .bss
 section .text
     _start:
         mov esp, _esp
+        push ebx
         cli
         lgdt [gdt_descriptor]
         call kmain

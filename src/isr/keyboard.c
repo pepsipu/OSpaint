@@ -2,6 +2,7 @@
 #define KEY
 
 #include <cpu/io.c>
+#include <ui/primitives.c>
 
 unsigned char kbdmix[128] = {
         0, 27, '1', '2', '3', '4', '5', '6', '7', '8',    /* 9 */
@@ -138,8 +139,10 @@ unsigned char kbdse_alt[128] =
 #define MOD_SHIFT (1 << 1)
 #define MOD_ALT   (1 << 2)
 
+int t = 0;
 void null_handler(char key) {
-    // do nothing
+    plot_pixel(WIDTH / 2, t, 0xffffff);
+    t++;
 }
 
 
