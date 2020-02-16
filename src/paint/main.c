@@ -1,5 +1,9 @@
 #define SELECT_OFFSET 15
 
+#include <lib/mem/memcpy.c>
+
+uint32_t double_buffer[WIDTH][HEIGHT];
+uint8_t *back_buffer;
 
 uint8_t color_index = 0;
 uint32_t palette[] = {
@@ -21,12 +25,6 @@ struct cursor {
         .x = 0,
         .y = 0,
         .size = 4
-};
-
-struct cursor prev_cursor = {
-        .x = 0,
-        .y = 0,
-        .size = 0
 };
 
 volatile uint8_t running = 1;
@@ -56,13 +54,7 @@ void draw_color_select() {
 }
 
 void draw_cursor() {
-    draw_rectangle_width(prev_cursor.x, prev_cursor.y, prev_cursor.size, prev_cursor.size, 0);
-    draw_rectangle_width(cursor.x + 239, cursor.y, cursor.size, cursor.size, palette[color_index]);
-    prev_cursor = (struct cursor) {
-            .x = cursor.x + 239,
-            .y = cursor.y,
-            .size = cursor.size
-    };
+    draw_rectangle_width_buff(cursor.x + 239, cursor.y, cursor.size, cursor.size, palette[color_index], back_buffer);
 }
 
 void scale_handler(char c) {
@@ -84,7 +76,64 @@ void scale_handler(char c) {
     update = 1;
 }
 
-struct cursor line_point; // size will be used to identify if the point has been laid down or not
+struct cursor line_point = {
+        .x = 0,
+        .y = 0,
+        .size = 0,
+}; // size will be used to identify if the point has been laid down or not
+struct cursor line_point2 = {
+        .x = 0,
+        .y = 0,
+        .size = 0
+};;
+struct cursor prev = {
+        .x = 0,
+        .y = 0,
+        .size = 0
+};;
+struct cursor prev2 = {
+        .x = 0,
+        .y = 0,
+        .size = 0
+};
+
+void triangle_handler(char c) {
+    movement(c);
+    if (!line_point.size) {
+        if (c == '\n') {
+            line_point.size = 1;
+            line_point.x = cursor.x;
+            line_point.y = cursor.y;
+        }
+    } else if (!line_point2.size) {
+        if (c == '\n') {
+            line_point2.size = 1;
+            line_point2.x = cursor.x;
+            line_point2.y = cursor.y;
+        }
+    } else {
+        if (c == '\n') {
+            line_point.size = 0;
+            line_point2.size = 0;
+            prev.size = 0;
+            key_down_handler = paint_handler;
+        }
+        if (prev.size) {
+            draw_line(prev.x, prev.y, line_point.x + 239, line_point.y, 0, 1); // clear
+            draw_line(prev.x, prev.y, line_point2.x + 239, line_point2.y, 0, 1); // clear
+        }
+        prev = (struct cursor) {
+                .x = cursor.x + 239,
+                .y = cursor.y,
+                .size = 1
+        };
+        draw_line(cursor.x + 239, cursor.y, line_point.x + 239, line_point.y, palette[color_index], 1);
+        draw_line(cursor.x + 239, cursor.y, line_point2.x + 239, line_point2.y, palette[color_index], 1);
+        draw_line(line_point.x + 239, line_point.y, line_point2.x + 239, line_point2.y, palette[color_index], 1);
+    }
+    update = 1;
+}
+
 void line_handler(char c) {
     movement(c);
     if (!line_point.size) {
@@ -96,9 +145,36 @@ void line_handler(char c) {
     } else {
         if (c == '\n') {
             line_point.size = 0;
+            prev.size = 0;
             key_down_handler = paint_handler;
         }
-        draw_rectangle(cursor.x + 239, cursor.y, line_point.x + 239, line_point.y, 0); // clear
+        if (prev.size) {
+            draw_line(prev.x, prev.y, line_point.x + 239, line_point.y, 0, 1); // clear
+        }
+        prev = (struct cursor) {
+                .x = cursor.x + 239,
+                .y = cursor.y,
+                .size = 1
+        };
+        draw_line(cursor.x + 239, cursor.y, line_point.x + 239, line_point.y, palette[color_index], 1);
+    }
+    update = 1;
+}
+
+void td_handler(char c) {
+    movement(c);
+    if (!line_point.size) {
+        if (c == '\n') {
+            line_point.size = 1;
+            line_point.x = cursor.x;
+            line_point.y = cursor.y;
+        }
+    } else {
+        if (c == '\n') {
+            line_point.size = 0;
+            prev.size = 0;
+            key_down_handler = paint_handler;
+        }
         draw_line(cursor.x + 239, cursor.y, line_point.x + 239, line_point.y, palette[color_index], 1);
     }
     update = 1;
@@ -109,6 +185,12 @@ void exec() {
         key_down_handler = scale_handler;
     } else if (string_cmp(cmd_buffer, "line")) {
         key_down_handler = line_handler;
+    } else if (string_cmp(cmd_buffer, "3d")) {
+        key_down_handler = td_handler;
+    } else if (string_cmp(cmd_buffer, "triangle")) {
+        key_down_handler = triangle_handler;
+    } else if (string_cmp(cmd_buffer, "fill")) {
+        flood_fill(cursor.x, cursor.y, fetch_pixel(cursor.x, cursor.y), palette[color_index]);
     }
 }
 
@@ -134,6 +216,8 @@ void movement(char c) {
                 cursor.x += cursor.size;
             }
             break;
+        case 'z':
+            draw_rectangle_width(cursor.x + 239, cursor.y, cursor.size, cursor.size, palette[color_index]);
     }
 }
 
@@ -156,27 +240,8 @@ void paint_handler(char c) {
             }
         }
     } else {
+        movement(c);
         switch (c) {
-            case 'w':
-                if (cursor.y - cursor.size > 0) {
-                    cursor.y -= cursor.size;
-                }
-                break;
-            case 's':
-                if (cursor.y + 2 * cursor.size < HEIGHT - 31) {
-                    cursor.y += cursor.size;
-                }
-                break;
-            case 'a':
-                if (cursor.x - cursor.size > 0) {
-                    cursor.x -= cursor.size;
-                }
-                break;
-            case 'd':
-                if (cursor.x + 2 * cursor.size < WIDTH - 239) {
-                    cursor.x += cursor.size;
-                }
-                break;
             case ';':
                 cmd = 1;
                 break;
@@ -206,6 +271,8 @@ void paint_handler(char c) {
 }
 
 int paint_main() {
+    back_buffer = frame_buffer;
+    frame_buffer = (uint8_t *) double_buffer;
     memset(cmd_buffer, 0, 256);
     clear();
     key_down_handler = paint_handler;
@@ -213,14 +280,13 @@ int paint_main() {
         while (!update) {}
         update = 0;
         draw_desktop();
-        draw_cursor();
         draw_color_select();
         draw_rectangle_width(241, HEIGHT - 23, WIDTH - 241, 23, 0);
         if (cmd) {
             draw_char(';', 240, HEIGHT - 23, 0xffffff);
             draw_string(cmd_buffer, 248, HEIGHT - 23, 0xffffff);
         }
-
-
+        memcpy(back_buffer, double_buffer, WIDTH * HEIGHT * 3);
+        draw_cursor();
     }
 }

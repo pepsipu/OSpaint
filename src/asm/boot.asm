@@ -25,8 +25,8 @@ section .multiboot
     dd DEPTH
 section .bss
     align 16
-    resb 1024
-    _esp: ; stack will grow down towards the end of the reserved bytes (4kb)
+    resb 8192
+    _esp: ; stack will grow down towards the end of the reserved bytes
 section .text
     _start:
         mov esp, _esp
