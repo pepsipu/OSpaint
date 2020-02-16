@@ -1,3 +1,12 @@
+#include <cpu/idt.c>
+#include <cpu/pic.c>
+#include <vesa/vesa.c>
+
 void kmain() {
-    *((char *) 0xb8000) = 'a';
+    remap_pic();
+    init_idt();
+    while (1) {
+
+    }
 }
+
