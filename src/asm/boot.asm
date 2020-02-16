@@ -1,16 +1,28 @@
-flags equ 1 << 0 | 1 << 1
-magic equ 0x1badb002 ; signature
-checksum equ -(magic + flags)
+FLAGS equ 1 << 0 | 1 << 1 | 1 << 2
+MAGIC equ 0x1badb002 ; signature
+CHECKSUM equ -(MAGIC + FLAGS)
+VIDMODE equ 0
+WIDTH equ 1280
+HEIGHT equ 720
+DEPTH equ 32
 
 global _start:function (_start.end - _start)
 extern kmain
-extern vbe_ptr
 
 section .multiboot
     align 4
-    dd magic
-    dd flags
-    dd checksum
+    dd MAGIC
+    dd FLAGS
+    dd CHECKSUM
+    dd 0
+    dd 0
+    dd 0
+    dd 0
+    dd 0
+    dd VIDMODE
+    dd WIDTH
+    dd HEIGHT
+    dd DEPTH
 section .bss
     align 16
     resb 1024
@@ -18,11 +30,6 @@ section .bss
 section .text
     _start:
         mov esp, _esp
-        mov eax, 0x4F02	; set VBE mode
-        mov ebx, 0x4117	; VBE mode number; notice that bits 0-13 contain the mode number and bit 14 (LFB) is set and bit 15 (DM) is clear.
-        int 0x10			; call VBE BIOS
-        cmp eax, 0x004F	; test for error
-        jne .hang
         cli
         lgdt [gdt_descriptor]
         call kmain
