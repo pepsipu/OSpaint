@@ -134,6 +134,33 @@ void triangle_handler(char c) {
     update = 1;
 }
 
+void rect_handler(char c) {
+    movement(c);
+    if (!line_point.size) {
+        if (c == '\n') {
+            line_point.size = 1;
+            line_point.x = cursor.x;
+            line_point.y = cursor.y;
+        }
+    } else {
+        if (c == '\n') {
+            line_point.size = 0;
+            prev.size = 0;
+            key_down_handler = paint_handler;
+        }
+        if (prev.size) {
+            draw_rectangle(prev.x, prev.y, line_point.x + 239, line_point.y, 0); // clear
+        }
+        prev = (struct cursor) {
+                .x = cursor.x + 239,
+                .y = cursor.y,
+                .size = 1
+        };
+        draw_rectangle(cursor.x + 239, cursor.y, line_point.x + 239, line_point.y, palette[color_index]);
+    }
+    update = 1;
+}
+
 void line_handler(char c) {
     movement(c);
     if (!line_point.size) {
@@ -180,6 +207,23 @@ void td_handler(char c) {
     update = 1;
 }
 
+uint16_t scale = 1;
+void circle_handler(char c) {
+    draw_circle(cursor.x + 239, cursor.y, scale + 1, 0);
+    switch (c) {
+        case 'w':
+            scale++;
+            break;
+        case 's':
+            scale--;
+            break;
+        case '\n':
+            key_down_handler = paint_handler;
+    }
+    draw_circle(cursor.x + 239, cursor.y, scale, palette[color_index]);
+    update = 1;
+}
+
 void exec() {
     if (string_cmp(cmd_buffer, "scale")) {
         key_down_handler = scale_handler;
@@ -190,7 +234,11 @@ void exec() {
     } else if (string_cmp(cmd_buffer, "triangle")) {
         key_down_handler = triangle_handler;
     } else if (string_cmp(cmd_buffer, "fill")) {
-        flood_fill(cursor.x, cursor.y, fetch_pixel(cursor.x, cursor.y), palette[color_index]);
+        flood_fill(cursor.x + 239, cursor.y, fetch_pixel(cursor.x + 239, cursor.y), palette[color_index]);
+    } else if (string_cmp(cmd_buffer, "rectangle")) {
+        key_down_handler = rect_handler;
+    } else if (string_cmp(cmd_buffer, "circle")) {
+        key_down_handler = circle_handler;
     }
 }
 

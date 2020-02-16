@@ -51,16 +51,18 @@ void triangle(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint16_t x2, u
     draw_line(x2, y2, x0, y0, color, thickness);
 }
 
-void draw_rectangle(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint32_t color) {
-
-}
-
 void draw_rectangle_width(uint16_t x, uint16_t y, uint16_t width, uint16_t height, uint32_t color) {
     for (int i = 0; i < width; i++) {
         for (int k = 0; k < height; k++) {
             plot_pixel(x + i, y + k, color);
         }
     }
+}
+
+void draw_rectangle(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, uint32_t color) {
+    uint16_t x_dist = abs(x0 - x1);
+    uint16_t y_dist = abs(y0 - y1);
+    draw_rectangle_width(x0, y0, x_dist, y_dist, color);
 }
 
 void plot_pixel_buff(uint16_t x, uint16_t y, uint32_t color, uint8_t *buffer) {
@@ -79,19 +81,46 @@ draw_rectangle_width_buff(uint16_t x, uint16_t y, uint16_t width, uint16_t heigh
     }
 }
 
+int t = 0;
 
 void flood_fill(uint16_t x, uint16_t y, uint32_t color, uint32_t new_color) {
     uint32_t next_color = fetch_pixel(x, y);
     if (next_color != color || next_color == new_color) return;
-
     plot_pixel(x ,y, new_color);
     flood_fill(x + 1, y, color, new_color);  // then i can either go south
     flood_fill(x - 1, y, color, new_color);  // or north
     flood_fill(x, y + 1, color, new_color);  // or east
     flood_fill(x, y - 1, color, new_color);  // or west
-
     return;
 
+}
+
+void outline_circle(uint16_t xc, uint16_t yc, uint16_t x, uint16_t y, uint32_t color) {
+    plot_pixel(xc+x, yc+y, color);
+    plot_pixel(xc-x, yc+y, color);
+    plot_pixel(xc+x, yc-y, color);
+    plot_pixel(xc-x, yc-y, color);
+    plot_pixel(xc+y, yc+x, color);
+    plot_pixel(xc-y, yc+x, color);
+    plot_pixel(xc+y, yc-x, color);
+    plot_pixel(xc-y, yc-x, color);
+}
+
+// bresenham's algorithm, thanks geeksforgeeks
+void draw_circle(uint16_t xc, uint16_t yc, uint16_t r, uint32_t color) {
+    int x = 0;
+    int y = r;
+    int d = 3 - 2 * r;
+    outline_circle(xc, yc, x, y, color);
+    while (y >= x) {
+        x++;
+        if (d > 0) {
+            y--;
+            d = d + 4 * (x - y) + 10;
+        }
+        else d = d + 4 * x + 6;
+        outline_circle(xc, yc, x, y, color);
+    }
 }
 
 void clear() {
