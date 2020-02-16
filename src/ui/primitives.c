@@ -56,4 +56,8 @@ void draw_rectangle_width(uint16_t x, uint16_t y, uint16_t width, uint16_t heigh
     }
 }
 
+void clear() {
+    memset(frame_buffer, 0, HEIGHT * WIDTH * 3);
+}
+
 #endif

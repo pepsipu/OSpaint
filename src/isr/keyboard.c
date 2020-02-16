@@ -139,10 +139,7 @@ unsigned char kbdse_alt[128] =
 #define MOD_SHIFT (1 << 1)
 #define MOD_ALT   (1 << 2)
 
-int t = 0;
 void null_handler(char key) {
-    plot_pixel(WIDTH / 2, t, 0xffffff);
-    t++;
 }
 
 

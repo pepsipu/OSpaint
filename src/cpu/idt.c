@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <isr/clock.c>
-#include <mem/memset.c>
+#include <lib/mem/memset.c>
 #include <isr/double_fault.c>
 #include <isr/keyboard.c>
 #include <cpu/io.c>
