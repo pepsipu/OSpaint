@@ -5,3 +5,5 @@ OS in 24 hours for code day LA, what can go wrong?
 
 ## CodeDayLA is over!
 I did what I could in 24 hours. This project is now archived. To [view the slides](https://docs.google.com/presentation/d/11xOX1APMgwM_elHtk__LkVEFYYzSV4EBLGOFKmzEq4c/edit?usp=sharing) that was used during the presentation of OSpaint, click the link.
+
+To get an ISO, go to the releases tab on github.
